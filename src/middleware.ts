@@ -12,12 +12,20 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+        setAll(cookiesToSet, headers) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+
           supabaseResponse = NextResponse.next({ request })
+
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
+
+          Object.entries(headers ?? {}).forEach(([key, value]) => {
+            supabaseResponse.headers.set(key, value)
+          })
         },
       },
     }
@@ -25,19 +33,15 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // getUser() transparently refreshes an expired access token, which
-  // ROTATES the refresh token and writes the new cookies onto
-  // `supabaseResponse` via setAll() above. Any response we return in
-  // place of `supabaseResponse` (every redirect / JSON branch below)
-  // is a fresh object that does NOT carry those Set-Cookie headers, so
-  // the rotated token never reaches the browser. The next request then
-  // replays the old, now-consumed refresh token, the refresh fails, and
-  // the session wedges — the user gets a broken reload after idling and
-  // can only recover by manually clearing cookies (issue #288). Copy the
-  // refreshed cookies onto whatever response we hand back to fix that.
+  // getUser() can refresh and rotate the session. Any redirect / JSON
+  // response we return instead of supabaseResponse must carry those
+  // refreshed cookies forward to the browser.
   const withRefreshedCookies = <T extends NextResponse>(response: T): T => {
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       response.cookies.set(cookie)
+    })
+    supabaseResponse.headers.forEach((value, key) => {
+      response.headers.set(key, value)
     })
     return response
   }
@@ -45,9 +49,7 @@ export async function middleware(request: NextRequest) {
   // Auth pages - redirect to dashboard if already logged in.
   // Exception: when an invite token is in the query string we
   // send the already-signed-in user to /join/<token> instead so
-  // they can accept the invitation in one click. Without this,
-  // a forwarded invite link to someone who's already signed in
-  // would silently drop them on /dashboard.
+  // they can accept the invitation in one click.
   if (user && (
     request.nextUrl.pathname === '/login' ||
     request.nextUrl.pathname === '/signup' ||
