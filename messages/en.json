@@ -10,7 +10,7 @@
     "forgotPassword": "Forgot password?",
     "passwordPlaceholder": "Enter your password",
     "signingIn": "Signing in...",
-    "signIn": "Sign in to SutraAPI",
+    "signIn": "Sign in",
     "noAccount": "New to SutraAPI?",
     "createAccount": "Create your workspace"
   },
