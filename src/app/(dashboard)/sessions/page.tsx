@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarDays, Clock3, Users } from "lucide-react";
+import { CalendarDays, Clock3, MessageCircle, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 interface SessionRow {
@@ -17,6 +17,8 @@ export default function SessionsPage() {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sendingSessionId, setSendingSessionId] = useState<string | null>(null);
+  const [sendMessage, setSendMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const loadSessions = async () => {
@@ -37,6 +39,44 @@ export default function SessionsPage() {
 
     void loadSessions();
   }, []);
+
+  const sendTestInvitation = async (sessionId: string) => {
+    setSendingSessionId(sessionId);
+    setSendMessage(null);
+
+    try {
+      const response = await fetch("/api/sessions/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          participant_phone: "9966623190",
+        }),
+      });
+
+      const data = (await response.json()) as {
+        success?: boolean;
+        error?: string;
+        participant?: string;
+        phone?: string;
+        personalized_url?: string;
+      };
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to send invitation.");
+      }
+
+      setSendMessage(
+        `Invitation sent to ${data.participant || "9966623190"}.`,
+      );
+    } catch (err) {
+      setSendMessage(
+        err instanceof Error ? err.message : "Failed to send invitation.",
+      );
+    } finally {
+      setSendingSessionId(null);
+    }
+  };
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -60,6 +100,12 @@ export default function SessionsPage() {
           Create Session
         </button>
       </div>
+
+      {sendMessage ? (
+        <div className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground">
+          {sendMessage}
+        </div>
+      ) : null}
 
       {loading ? (
         <div className="rounded-xl border border-border bg-card p-8 text-sm text-muted-foreground">
@@ -114,16 +160,30 @@ export default function SessionsPage() {
                     </span>
                   </div>
                 </div>
-                {session.join_url ? (
-                  <a
-                    href={session.join_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-sm font-medium text-primary hover:underline"
+                <div className="flex flex-wrap items-center gap-3">
+                  {session.join_url ? (
+                    <a
+                      href={session.join_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      Open session
+                    </a>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => void sendTestInvitation(session.id)}
+                    disabled={sendingSessionId !== null}
+                    className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+                    title="Send sutra_session_invitation to 9966623190"
                   >
-                    Open session
-                  </a>
-                ) : null}
+                    <MessageCircle className="h-4 w-4" />
+                    {sendingSessionId === session.id
+                      ? "Sending..."
+                      : "Test WhatsApp"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
