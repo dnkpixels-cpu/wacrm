@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { CalendarDays, Clock3, MessageCircle, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -156,11 +157,17 @@ export default function SessionsPage() {
                     </span>
                     <span className="inline-flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5" />
-                      Participants next
+                      Participants
                     </span>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href={`/sessions/${session.id}`}
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    Attendance
+                  </Link>
                   {session.join_url ? (
                     <a
                       href={session.join_url}
