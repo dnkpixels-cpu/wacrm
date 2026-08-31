@@ -190,7 +190,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   <Link href="/dashboard" className="flex items-center gap-2">
     <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-primary">
       <img
-        src="/SA%20ICOn.png"
+        src="/sutraapi-icon.png"
         alt="SutraAPI"
         className="h-8 w-8 object-contain"
       />
