@@ -186,24 +186,28 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
       >
         {/* Logo row. On mobile we put a close button here; on desktop the
             close button is hidden since the sidebar is always-visible. */}
-        <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <MessageSquare className="h-4 w-4" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">
-              {t("title")}
-            </span>
-          </Link>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t("closeMenu")}
-            className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
+  <Link href="/dashboard" className="flex items-center gap-2">
+    <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-primary">
+      <img
+        src="/SA%20ICOn.png"
+        alt="SutraAPI"
+        className="h-8 w-8 object-contain"
+      />
+    </div>
+    <span className="text-sm font-semibold text-foreground">
+      {t("title")}
+    </span>
+  </Link>
+  <button
+    type="button"
+    onClick={onClose}
+    aria-label={t("closeMenu")}
+    className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
+  >
+    <X className="h-5 w-5" />
+  </button>
+</div>
 
         {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
