@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { DashboardShell } from "./dashboard-shell";
 
+// Authenticated pages must be rendered dynamically so a cached response
+// can never be reused across sessions.
+export const dynamic = "force-dynamic";
+
 // Server layout whose only job is to declare "do not index" metadata
 // for the authed app. robots.ts already disallows these paths at the
 // crawler-level and middleware redirects unauthenticated visitors, so
