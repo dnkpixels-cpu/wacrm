@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MessageSquare, UsersRound } from "lucide-react";
+import { UsersRound, ShieldCheck, Zap, MessageCircle } from "lucide-react";
 
 // `useSearchParams` opts the component out of static prerendering
 // unless it sits under a Suspense boundary. We split the form into
@@ -75,26 +75,89 @@ function LoginPageInner() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md border-border bg-card">
-        <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            {inviteToken ? (
-              <UsersRound className="h-6 w-6 text-primary" />
-            ) : (
-              <MessageSquare className="h-6 w-6 text-primary" />
-            )}
+    <div className="relative flex min-h-screen overflow-hidden bg-background">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,color-mix(in_oklch,var(--primary)_12%,transparent),transparent_35%),radial-gradient(circle_at_80%_80%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_35%)]" />
+
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col lg:flex-row">
+        <div className="hidden flex-1 flex-col justify-between p-10 lg:flex xl:p-16">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl">
+                <img
+                  src="/sutraapi-icon.png"
+                  alt="SutraAPI"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <span className="text-xl font-semibold tracking-tight text-foreground">
+                SutraAPI
+              </span>
+            </div>
+
+            <div className="mt-24 max-w-xl">
+              <p className="text-sm font-medium uppercase tracking-[0.2em] text-primary">
+                WhatsApp business, simplified
+              </p>
+              <h1 className="mt-5 text-5xl font-semibold tracking-tight text-foreground xl:text-6xl">
+                Every conversation.
+                <br />
+                <span className="text-primary">One workspace.</span>
+              </h1>
+              <p className="mt-6 max-w-lg text-lg leading-8 text-muted-foreground">
+                Manage WhatsApp conversations, customers, follow-ups and
+                automation from one calm, focused workspace.
+              </p>
+
+              <div className="mt-10 space-y-5">
+                <div className="flex items-center gap-4">
+                  <MessageCircle className="h-5 w-5 text-primary" />
+                  <span className="text-sm text-muted-foreground">
+                    Keep every customer conversation organized
+                  </span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Zap className="h-5 w-5 text-primary" />
+                  <span className="text-sm text-muted-foreground">
+                    Automate follow-ups and repetitive work
+                  </span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                  <span className="text-sm text-muted-foreground">
+                    Built for teams that care about their customers
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <CardTitle className="text-xl text-foreground">
-            {inviteToken ? t('titleAccept') : t('titleWelcome')}
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            {inviteToken
-              ? t('descAccept')
-              : t('descWelcome')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+
+          <p className="text-sm text-muted-foreground">
+            Your conversations. Your customers. Your workspace.
+          </p>
+        </div>
+
+        <div className="flex flex-1 items-center justify-center px-4 py-10 lg:max-w-xl lg:px-10">
+          <Card className="my-auto w-full max-w-md border-border bg-card/95 shadow-2xl backdrop-blur-xl">
+            <CardHeader className="items-center text-center">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-primary/10 p-2">
+                {inviteToken ? (
+                  <UsersRound className="h-7 w-7 text-primary" />
+                ) : (
+                  <img
+                    src="/sutraapi-icon.png"
+                    alt="SutraAPI"
+                    className="h-full w-full object-contain"
+                  />
+                )}
+              </div>
+              <CardTitle className="text-2xl font-semibold tracking-tight text-foreground">
+                {inviteToken ? t('titleAccept') : t('titleWelcome')}
+              </CardTitle>
+              <CardDescription className="mt-1 max-w-sm text-center leading-6 text-muted-foreground">
+                {inviteToken ? t('descAccept') : t('descWelcome')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             {error && (
               <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
@@ -143,7 +206,7 @@ function LoginPageInner() {
             <Button
               type="submit"
               disabled={loading}
-              className="mt-2 h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              className="mt-2 h-11 w-full rounded-lg bg-primary font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover hover:shadow-xl hover:shadow-primary/25 disabled:opacity-50"
             >
               {loading ? t('signingIn') : t('signIn')}
             </Button>
@@ -162,8 +225,10 @@ function LoginPageInner() {
               {t('createAccount')}
             </Link>
           </p>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
