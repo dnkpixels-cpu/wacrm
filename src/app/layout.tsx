@@ -22,13 +22,14 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "wacrm",
-    template: "%s — wacrm",
+    default: "SutraAPI — WhatsApp CRM & Automation",
+    template: "%s — SutraAPI",
   },
-  description: "Sutra API — WhatsApp business communication and automation.",
+  description:
+    "SutraAPI is a powerful WhatsApp CRM for managing conversations, contacts, sales pipelines, broadcasts, automations, and AI-powered customer communication.",
   robots: {
-    index: false,
-    follow: false,
+    index: true,
+    follow: true,
   },
   icons: {
     icon: [{ url: "/icon" }],
@@ -45,16 +46,6 @@ export const viewport: Viewport = {
   colorScheme: "dark light",
 };
 
-// Inline boot script — runs before React hydrates so the user's
-// chosen accent (data-theme) AND mode (data-mode) are on the <html>
-// element before first paint. Without this every page load flashes
-// the server-rendered defaults for a frame before the React tree
-// mounts and applies the picked values.
-//
-// Kept dependency-free (no imports, no JSX) — must be a string the
-// browser can run as a single <script>. Knowledge of valid ids is
-// sourced from the THEME_IDS / MODES constants so adding one doesn't
-// silently break the boot path.
 const THEME_BOOT_SCRIPT = `
 (function(){
   var d = document.documentElement;
@@ -91,13 +82,6 @@ export default async function RootLayout({
       data-theme={DEFAULT_THEME}
       data-mode={DEFAULT_MODE}
       className={`${inter.variable} h-full antialiased`}
-      // The `theme-boot` script below rewrites `data-theme` and
-      // `data-mode` on <html> from localStorage before React hydrates,
-      // so for any non-default choice the client DOM intentionally
-      // differs from the server-rendered defaults. suppressHydration-
-      // Warning silences the expected mismatch — it only applies to
-      // this element's own attributes, so genuine mismatches in
-      // children still surface.
       suppressHydrationWarning
     >
       <head>
