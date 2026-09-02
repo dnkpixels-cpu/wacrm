@@ -27,6 +27,7 @@ export const SETTINGS_SECTIONS = [
   'members',
   'api',
   'features',
+  'tagmango',
 ] as const;
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
@@ -52,6 +53,7 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   members: { id: 'members', label: 'Team members', icon: UsersRound, group: 'workspace' },
   api: { id: 'api', label: 'API keys', icon: KeyRound, group: 'workspace' },
   features: { id: 'features', label: 'Features', icon: Workflow, group: 'workspace' },
+  tagmango: { id: 'tagmango', label: 'TagMango', icon: PlugZap, group: 'workspace' },
 };
 
 export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[] = [
