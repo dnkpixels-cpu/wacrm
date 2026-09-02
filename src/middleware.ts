@@ -9,23 +9,12 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
+        getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet, headers) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
-
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-
-          Object.entries(headers ?? {}).forEach(([key, value]) => {
-            supabaseResponse.headers.set(key, value)
-          })
+          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
+          Object.entries(headers ?? {}).forEach(([key, value]) => supabaseResponse.headers.set(key, value))
         },
       },
     }
@@ -33,23 +22,12 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // getUser() can refresh and rotate the session. Any redirect / JSON
-  // response we return instead of supabaseResponse must carry those
-  // refreshed cookies forward to the browser.
   const withRefreshedCookies = <T extends NextResponse>(response: T): T => {
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      response.cookies.set(cookie)
-    })
-    supabaseResponse.headers.forEach((value, key) => {
-      response.headers.set(key, value)
-    })
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie))
+    supabaseResponse.headers.forEach((value, key) => response.headers.set(key, value))
     return response
   }
 
-  // Auth pages - redirect to dashboard if already logged in.
-  // Exception: when an invite token is in the query string we
-  // send the already-signed-in user to /join/<token> instead so
-  // they can accept the invitation in one click.
   if (user && (
     request.nextUrl.pathname === '/login' ||
     request.nextUrl.pathname === '/signup' ||
@@ -57,11 +35,7 @@ export async function middleware(request: NextRequest) {
   )) {
     const url = request.nextUrl.clone()
     const inviteToken = request.nextUrl.searchParams.get('invite')
-    if (
-      inviteToken &&
-      (request.nextUrl.pathname === '/login' ||
-        request.nextUrl.pathname === '/signup')
-    ) {
+    if (inviteToken && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
       url.pathname = `/join/${encodeURIComponent(inviteToken)}`
       url.search = ''
     } else {
@@ -71,27 +45,20 @@ export async function middleware(request: NextRequest) {
     return withRefreshedCookies(NextResponse.redirect(url))
   }
 
-  // Protected pages - redirect to login if not authenticated
-  const protectedPaths = ['/dashboard', '/inbox', '/contacts', '/sessions', '/pipelines', '/broadcasts', '/automations', '/settings']
+  const protectedPaths = ['/dashboard', '/inbox', '/contacts', '/sessions', '/pipelines', '/broadcasts', '/automations', '/settings', '/admin']
   if (!user && protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return withRefreshedCookies(NextResponse.redirect(url))
   }
 
-  // API routes that need auth (not webhooks)
-  if (!user && request.nextUrl.pathname.startsWith('/api/whatsapp/') &&
-      !request.nextUrl.pathname.includes('/webhook')) {
-    return withRefreshedCookies(
-      NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    )
+  if (!user && request.nextUrl.pathname.startsWith('/api/whatsapp/') && !request.nextUrl.pathname.includes('/webhook')) {
+    return withRefreshedCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
 
   return supabaseResponse
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }
