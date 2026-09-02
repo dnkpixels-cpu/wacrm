@@ -19,6 +19,7 @@ import { DealsSettings } from '@/components/settings/deals-settings';
 import { MembersTab } from '@/components/settings/members-tab';
 import { ApiKeysSettings } from '@/components/settings/api-keys-settings';
 import { FeaturesPanel } from '@/components/settings/features-panel';
+import { TagMangoPanel } from '@/components/settings/tagmango-panel';
 import { resolveSection, type SettingsSection } from '@/components/settings/settings-sections';
 
 export default function SettingsPage() {
@@ -64,6 +65,7 @@ function SettingsPageInner() {
     members: <MembersTab />,
     api: <ApiKeysSettings />,
     features: <FeaturesPanel />,
+    tagmango: <TagMangoPanel />,
   };
 
   return (
