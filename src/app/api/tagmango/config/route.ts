@@ -44,10 +44,11 @@ export async function POST(request: Request) {
     if (apiKey) payload.api_key_encrypted = encrypt(apiKey)
 
     const { data: current } = await admin.from('tagmango_configs').select('api_key_encrypted').eq('account_id', accountId).maybeSingle()
-    if (!payload.api_key_encrypted && !current?.api_key_encrypted) {
+    const existingApiKey = current?.api_key_encrypted ?? null
+    if (!payload.api_key_encrypted && !existingApiKey) {
       return NextResponse.json({ error: 'TagMango API key is required the first time you connect.' }, { status: 400 })
     }
-    if (!payload.api_key_encrypted) payload.api_key_encrypted = current.api_key_encrypted
+    if (!payload.api_key_encrypted && existingApiKey) payload.api_key_encrypted = existingApiKey
 
     const { data, error } = await admin
       .from('tagmango_configs')
