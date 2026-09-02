@@ -31,27 +31,24 @@ export async function POST(request: Request) {
   let configQuery = admin.from('tagmango_configs').select('account_id, whitelabel_host').eq('enabled', true)
   if (host) configQuery = configQuery.eq('whitelabel_host', host)
   const { data: configs, error: configError } = await configQuery.limit(2)
-
-  if (configError || !configs?.length) {
-    return NextResponse.json({ error: 'No matching TagMango workspace.' }, { status: 404 })
-  }
+  if (configError || !configs?.length) return NextResponse.json({ error: 'No matching TagMango workspace.' }, { status: 404 })
 
   const config = configs[0]
-  const calls = payload.callList ?? []
   let stored = 0
 
-  for (const call of calls) {
+  for (const call of payload.callList ?? []) {
     const sessionId = firstString(call._id, call.id, call.webinarId, call.sessionId)
     if (!sessionId) continue
-
-    const mangoTitle = firstString(call.mangoTitle, call.mango, payload.mangoes)
+    const mango = typeof call.mango === 'object' && call.mango !== null ? call.mango as Record<string, unknown> : null
+    const mangoTitle = firstString(call.mangoTitle, mango?.title, payload.mangoes)
+    const mangoId = firstString(call.mangoId, mango?._id)
     const phone = payload.phone === undefined || payload.phone === null ? null : String(payload.phone)
-    const tagmangoUserId = firstString(payload.email, phone, payload.name)
+    const tagmangoUserId = firstString(call.userId, payload.email, phone, payload.name)
 
     const { error } = await admin.from('tagmango_session_registrations').upsert({
       account_id: config.account_id,
       tagmango_session_id: sessionId,
-      mango_id: firstString(call.mangoId, call.mango?._id),
+      mango_id: mangoId,
       tagmango_user_id: tagmangoUserId,
       name: payload.name ?? null,
       email: payload.email ?? null,
@@ -64,12 +61,7 @@ export async function POST(request: Request) {
     else console.error('[tagmango/webhook] registration upsert failed:', error)
 
     if (mangoTitle) {
-      // Keep the value available for diagnostics even when TagMango sends
-      // only a display-name list rather than a mango id.
-      await admin.from('tagmango_sessions')
-        .update({ mango_title: mangoTitle })
-        .eq('account_id', config.account_id)
-        .eq('tagmango_session_id', sessionId)
+      await admin.from('tagmango_sessions').update({ mango_title: mangoTitle }).eq('account_id', config.account_id).eq('tagmango_session_id', sessionId)
     }
   }
 
