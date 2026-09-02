@@ -10,6 +10,7 @@ import {
   User,
   UsersRound,
   Workflow,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
 
