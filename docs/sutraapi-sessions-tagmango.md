@@ -28,7 +28,7 @@ The session sync reads the next 14 days from `GET /api/v1/external/workshops/vid
 
 Automated reminders are CRM-first. A TagMango attendee is only eligible if a matching phone number already exists in the SutraAPI account's `participants` table. SutraAPI never creates a recipient just because TagMango knows about them.
 
-TagMango's `webinar.created.single` webhook is supported at `/api/tagmango/webhook`. Register that webhook for the client's TagMango account so participant registration data can be stored in `tagmango_session_registrations`.
+TagMango's `webinar.created.single` webhook is supported at `/api/tagmango/webhook`. For multi-client use, register the endpoint with the target account's `?account_id=<SUTRA_ACCOUNT_ID>` query parameter so the same webhook route can safely serve multiple clients. This stores participant registration data in `tagmango_session_registrations`.
 
 If the TagMango account uses a webhook secret, set `TAGMANGO_WEBHOOK_SECRET` and configure the sender to provide `x-tagmango-webhook-secret`.
 
