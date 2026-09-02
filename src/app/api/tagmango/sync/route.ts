@@ -6,13 +6,7 @@ import { listUpcomingVideoCalls } from '@/lib/integrations/tagmango'
 
 async function syncAccount(accountId: string) {
   const admin = supabaseAdmin()
-  const { data: config, error: configError } = await admin
-    .from('tagmango_configs')
-    .select('*')
-    .eq('account_id', accountId)
-    .eq('enabled', true)
-    .maybeSingle()
-
+  const { data: config, error: configError } = await admin.from('tagmango_configs').select('*').eq('account_id', accountId).eq('enabled', true).maybeSingle()
   if (configError) throw configError
   if (!config) return { accountId, synced: 0, skipped: true }
 
@@ -26,7 +20,7 @@ async function syncAccount(accountId: string) {
     const startsAt = new Date(call.fromTime)
     if (Number.isNaN(startsAt.getTime())) continue
 
-    const { error } = await admin.from('tagmango_sessions').upsert({
+    const row = {
       account_id: accountId,
       tagmango_session_id: call._id,
       mango_id: call.mango?._id ?? null,
@@ -37,28 +31,26 @@ async function syncAccount(accountId: string) {
       meeting_url: call.meetingUrl ?? null,
       status: call.status ?? null,
       raw: call,
-    }, { onConflict: 'account_id,tagmango_session_id' })
-
+    }
+    const { error } = await admin.from('tagmango_sessions').upsert(row, { onConflict: 'account_id,tagmango_session_id' })
     if (!error) synced += 1
-    else console.error('[tagmango/sync] session upsert failed:', error)
+    else console.error('[tagmango/sync] canonical session upsert failed:', error)
 
-    // Bridge into the existing Sessions/Attendance feature when the
-    // legacy table is present. If its schema differs on an older install,
-    // the canonical tagmango_sessions record remains available.
     try {
-      const sessionDate = startsAt.toISOString().slice(0, 10)
-      const startTime = startsAt.toISOString().slice(11, 19)
-      await admin.from('sessions').upsert({
+      const sessionFields = {
         account_id: accountId,
-        session_date: sessionDate,
-        start_time: startTime,
+        session_date: startsAt.toISOString().slice(0, 10),
+        start_time: startsAt.toISOString().slice(11, 19),
         session_type: call.title || call.mango?.title || 'TagMango session',
         join_url: call.meetingUrl ?? null,
         status: call.status || 'scheduled',
         source: 'tagmango',
         tagmango_session_id: call._id,
         tagmango_mango_id: call.mango?._id ?? null,
-      }, { onConflict: 'account_id,tagmango_session_id' })
+      }
+      const { data: existing } = await admin.from('sessions').select('id').eq('account_id', accountId).eq('tagmango_session_id', call._id).maybeSingle()
+      if (existing?.id) await admin.from('sessions').update(sessionFields).eq('id', existing.id).eq('account_id', accountId)
+      else await admin.from('sessions').insert(sessionFields)
     } catch (error) {
       console.warn('[tagmango/sync] legacy session bridge unavailable:', error)
     }
@@ -81,8 +73,7 @@ export async function POST(request: Request) {
 export async function GET() {
   try {
     const { accountId } = await requireRole('agent')
-    const enabled = await isFeatureEnabled(accountId, 'tagmango')
-    if (!enabled) return NextResponse.json({ error: 'TagMango is not enabled for this workspace.' }, { status: 403 })
+    if (!(await isFeatureEnabled(accountId, 'tagmango'))) return NextResponse.json({ error: 'TagMango is not enabled for this workspace.' }, { status: 403 })
     return NextResponse.json({ ok: true, message: 'Use POST to sync upcoming sessions.' })
   } catch (error) {
     return toErrorResponse(error)
