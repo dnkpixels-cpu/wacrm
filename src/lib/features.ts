@@ -1,3 +1,4 @@
+import { ForbiddenError } from '@/lib/auth/account'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 
 export const FEATURE_KEYS = ['sessions', 'tagmango', 'session_reminders'] as const
@@ -18,6 +19,12 @@ export async function isFeatureEnabled(accountId: string, featureKey: FeatureKey
   }
 
   return data?.enabled === true
+}
+
+export async function requireFeature(accountId: string, featureKey: FeatureKey) {
+  if (!(await isFeatureEnabled(accountId, featureKey))) {
+    throw new ForbiddenError(`The '${featureKey}' feature is not enabled for this workspace`)
+  }
 }
 
 export async function getEnabledFeatures(accountId: string) {
