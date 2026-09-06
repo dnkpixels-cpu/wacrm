@@ -8,6 +8,11 @@ type TagMangoConfig = {
   timezone_offset_minutes?: number
 }
 
+type VideoCallsPayload = {
+  total?: number
+  data?: Array<{ date: string; calls?: TagMangoCall[] }>
+}
+
 export type TagMangoCall = {
   _id: string
   title?: string
@@ -48,17 +53,21 @@ async function request<T>(config: TagMangoConfig, path: string, params: Record<s
   return payload as T
 }
 
-export async function listUpcomingVideoCalls(config: TagMangoConfig, startDate: Date, endDate: Date) {
-  const payload = await request<{ total?: number; data?: Array<{ date: string; calls?: TagMangoCall[] }> }>(
+export async function listUpcomingVideoCallsResult(config: TagMangoConfig, startDate: Date, endDate: Date) {
+  return request<VideoCallsPayload>(
     config,
     '/api/v1/external/workshops/video-calls',
     {
       limit: 100,
       page: 1,
+      type: 'upcoming',
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
     },
   )
+}
 
+export async function listUpcomingVideoCalls(config: TagMangoConfig, startDate: Date, endDate: Date) {
+  const payload = await listUpcomingVideoCallsResult(config, startDate, endDate)
   return (payload?.data ?? []).flatMap((day) => day.calls ?? [])
 }
