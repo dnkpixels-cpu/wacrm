@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/flows/admin-client'
-import { listUpcomingVideoCalls } from '@/lib/integrations/tagmango'
+import { getVideoCallAttendees, listUpcomingVideoCalls, TagMangoRegistration } from '@/lib/integrations/tagmango'
 
 export async function syncTagMangoAccount(accountId: string) {
   const admin = supabaseAdmin()
@@ -34,6 +34,7 @@ export async function syncTagMangoAccount(accountId: string) {
     else console.error('[tagmango/sync] canonical session upsert failed:', error)
 
     try {
+      const now = new Date().toISOString()
       const sessionFields = {
         account_id: accountId,
         session_date: startsAt.toISOString().slice(0, 10),
@@ -44,8 +45,8 @@ export async function syncTagMangoAccount(accountId: string) {
         source: 'tagmango',
         tagmango_session_id: call._id,
         tagmango_mango_id: call.mango?._id ?? null,
-        created_at: new Date().toISOString(),
-updated_at: new Date().toISOString(),
+        created_at: now,
+        updated_at: now,
       }
       const { data: existing } = await admin.from('sessions').select('id').eq('account_id', accountId).eq('tagmango_session_id', call._id).maybeSingle()
       if (existing?.id) await admin.from('sessions').update(sessionFields).eq('id', existing.id).eq('account_id', accountId)
@@ -57,4 +58,71 @@ updated_at: new Date().toISOString(),
 
   await admin.from('tagmango_configs').update({ last_sync_at: new Date().toISOString() }).eq('account_id', accountId)
   return { accountId, synced, skipped: false }
+}
+
+export async function syncTagMangoSessionRegistrations(accountId: string, videoCallId: string) {
+  const admin = supabaseAdmin()
+  const { data: config, error: configError } = await admin
+    .from('tagmango_configs')
+    .select('*')
+    .eq('account_id', accountId)
+    .eq('enabled', true)
+    .maybeSingle()
+
+  if (configError) throw configError
+  if (!config) return { accountId, videoCallId, synced: 0, skipped: true }
+
+  const { data: session, error: sessionError } = await admin
+    .from('tagmango_sessions')
+    .select('id, tagmango_session_id, mango_id')
+    .eq('account_id', accountId)
+    .eq('tagmango_session_id', videoCallId)
+    .maybeSingle()
+
+  if (sessionError) throw sessionError
+  if (!session) throw new Error('TagMango session not found for this account.')
+
+  const attendees = await getVideoCallAttendees(config, videoCallId, 1, 100)
+  const registrations = attendees.registrations ?? []
+  let synced = 0
+
+  for (const registration of registrations as TagMangoRegistration[]) {
+    const userId = registration.userId?.trim() || null
+    const phone = registration.phone?.trim() || null
+    if (!userId && !phone) continue
+
+    const row = {
+      account_id: accountId,
+      tagmango_session_id: videoCallId,
+      mango_id: session.mango_id ?? null,
+      tagmango_user_id: userId,
+      name: registration.name?.trim() || null,
+      email: registration.email?.trim() || null,
+      phone,
+      timezone: registration.country?.trim() || null,
+      raw: registration,
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error } = await admin
+      .from('tagmango_session_registrations')
+      .upsert(row, { onConflict: 'account_id,tagmango_session_id,tagmango_user_id,phone' })
+
+    if (error) {
+      console.error('[tagmango/registrations] upsert failed:', error)
+      continue
+    }
+
+    synced += 1
+  }
+
+  return {
+    accountId,
+    videoCallId,
+    source: attendees.source ?? null,
+    callStatus: attendees.callStatus ?? null,
+    total: attendees.total ?? registrations.length,
+    filtered: attendees.filtered ?? registrations.length,
+    synced,
+  }
 }
