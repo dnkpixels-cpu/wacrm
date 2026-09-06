@@ -30,8 +30,14 @@ export async function GET() {
 
     try {
       const payload = await listUpcomingVideoCallsResult(config, start, end)
-      const body = 'result' in payload ? payload.result : payload
-      const calls = (body?.data ?? []).flatMap((day) => day.calls ?? [])
+      const body =
+  'result' in payload && payload.result
+    ? payload.result
+    : 'data' in payload
+      ? payload
+      : null
+
+const calls = (body?.data ?? []).flatMap((day) => day.calls ?? [])
 
       return NextResponse.json({
         ok: true,
