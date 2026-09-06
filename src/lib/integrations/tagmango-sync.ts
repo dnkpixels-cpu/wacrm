@@ -99,14 +99,30 @@ export async function syncTagMangoSessionRegistrations(accountId: string, videoC
       name: registration.name?.trim() || null,
       email: registration.email?.trim() || null,
       phone,
-      timezone: registration.country?.trim() || null,
+      timezone: null,
       raw: registration,
       updated_at: new Date().toISOString(),
     }
 
-    const { error } = await admin
+    let existingQuery = admin
       .from('tagmango_session_registrations')
-      .upsert(row, { onConflict: 'account_id,tagmango_session_id,tagmango_user_id,phone' })
+      .select('id')
+      .eq('account_id', accountId)
+      .eq('tagmango_session_id', videoCallId)
+
+    existingQuery = userId
+      ? existingQuery.eq('tagmango_user_id', userId)
+      : existingQuery.is('tagmango_user_id', null).eq('phone', phone)
+
+    const { data: existing, error: lookupError } = await existingQuery.maybeSingle()
+    if (lookupError) {
+      console.error('[tagmango/registrations] lookup failed:', lookupError)
+      continue
+    }
+
+    const { error } = existing?.id
+      ? await admin.from('tagmango_session_registrations').update(row).eq('id', existing.id).eq('account_id', accountId)
+      : await admin.from('tagmango_session_registrations').insert({ ...row, created_at: new Date().toISOString() })
 
     if (error) {
       console.error('[tagmango/registrations] upsert failed:', error)
