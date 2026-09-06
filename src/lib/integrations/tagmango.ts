@@ -13,6 +13,8 @@ type VideoCallsPayload = {
   data?: Array<{ date: string; calls?: TagMangoCall[] }>
 }
 
+type VideoCallsApiResponse = VideoCallsPayload | { result?: VideoCallsPayload }
+
 export type TagMangoCall = {
   _id: string
   title?: string
@@ -54,7 +56,7 @@ async function request<T>(config: TagMangoConfig, path: string, params: Record<s
 }
 
 export async function listUpcomingVideoCallsResult(config: TagMangoConfig, startDate: Date, endDate: Date) {
-  return request<VideoCallsPayload>(
+  const payload = await request<VideoCallsApiResponse>(
     config,
     '/api/v1/external/workshops/video-calls',
     {
@@ -65,6 +67,8 @@ export async function listUpcomingVideoCallsResult(config: TagMangoConfig, start
       endDate: endDate.toISOString(),
     },
   )
+
+  return 'result' in payload && payload.result ? payload.result : payload
 }
 
 export async function listUpcomingVideoCalls(config: TagMangoConfig, startDate: Date, endDate: Date) {
