@@ -15,6 +15,17 @@ type VideoCallsPayload = {
 
 type VideoCallsApiResponse = VideoCallsPayload | { result?: VideoCallsPayload }
 
+type VideoCallAttendeesPayload = {
+  source?: 'participants' | 'subscriptions' | string
+  callStatus?: string
+  total?: number
+  filtered?: number
+  attendanceSessionsHeld?: number
+  registrations?: TagMangoRegistration[]
+}
+
+type VideoCallAttendeesApiResponse = VideoCallAttendeesPayload | { result?: VideoCallAttendeesPayload }
+
 export type TagMangoCall = {
   _id: string
   title?: string
@@ -25,6 +36,16 @@ export type TagMangoCall = {
   meetingUrl?: string
   mango?: { _id: string; title?: string }
   creator?: { _id?: string; name?: string; email?: string }
+}
+
+export type TagMangoRegistration = {
+  name?: string
+  email?: string
+  country?: string
+  userId?: string
+  phone?: string
+  registeredAt?: string
+  sessionsAttended?: number
 }
 
 async function request<T>(config: TagMangoConfig, path: string, params: Record<string, string | number | undefined> = {}) {
@@ -82,4 +103,15 @@ export async function listUpcomingVideoCalls(config: TagMangoConfig, startDate: 
         : null
 
   return (body?.data ?? []).flatMap((day) => day.calls ?? [])
+}
+
+export async function getVideoCallAttendees(config: TagMangoConfig, videoCallId: string, page = 1, limit = 100) {
+  const payload = await request<VideoCallAttendeesApiResponse>(
+    config,
+    `/api/v1/external/workshops/video-calls/${encodeURIComponent(videoCallId)}/attendees`,
+    { page, limit },
+  )
+
+  const body = 'result' in payload && payload.result ? payload.result : payload
+  return body
 }
