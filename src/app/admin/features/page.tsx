@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 const FEATURES = [
   ['sessions', 'Sessions'],
@@ -45,7 +45,7 @@ export default function FeatureAdminPage() {
     return grouped
   }, [memberships])
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true)
     setMessage('')
     try {
@@ -68,11 +68,11 @@ export default function FeatureAdminPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     void load()
-  }, [])
+  }, [load])
 
   const enabled = (accountId: string, featureKey: string) =>
     features.some((feature) => feature.account_id === accountId && feature.feature_key === featureKey && feature.enabled)
@@ -95,7 +95,7 @@ export default function FeatureAdminPage() {
       if (data.feature) {
         setFeatures((current) => [
           ...current.filter((feature) => !(feature.account_id === accountId && feature.feature_key === featureKey)),
-          data.feature!,
+          data.feature,
         ])
       }
     } catch {
