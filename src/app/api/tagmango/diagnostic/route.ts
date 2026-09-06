@@ -12,7 +12,7 @@ export async function GET() {
     const admin = supabaseAdmin()
     const { data: config, error: configError } = await admin
       .from('tagmango_configs')
-      .select('account_id, whitelabel_host, enabled, timezone_offset_minutes, last_sync_at')
+      .select('account_id, api_key_encrypted, whitelabel_host, enabled, timezone_offset_minutes, last_sync_at')
       .eq('account_id', accountId)
       .maybeSingle()
 
@@ -29,6 +29,8 @@ export async function GET() {
     const end = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000)
 
     try {
+      // api_key_encrypted is used only server-side by the integration helper.
+      // It is never included in the diagnostic response.
       const calls = await listUpcomingVideoCalls(config, start, end)
       return NextResponse.json({
         ok: true,
