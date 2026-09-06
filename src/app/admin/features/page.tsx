@@ -23,6 +23,9 @@ type AdminResponse = {
   error?: string
 }
 
+type FeatureUpdateResponse = { feature?: Feature; error?: string }
+type AdminUpdateResponse = { ok?: boolean; error?: string }
+
 export default function FeatureAdminPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [features, setFeatures] = useState<Feature[]>([])
@@ -87,15 +90,16 @@ export default function FeatureAdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'feature', account_id: accountId, feature_key: featureKey, enabled: !enabled(accountId, featureKey) }),
       })
-      const data = await response.json() as { feature?: Feature; error?: string }
+      const data = await response.json() as FeatureUpdateResponse
       if (!response.ok) {
         setMessage(data.error || 'Update failed.')
         return
       }
-      if (data.feature) {
+      const feature = data.feature
+      if (feature) {
         setFeatures((current) => [
-          ...current.filter((feature) => !(feature.account_id === accountId && feature.feature_key === featureKey)),
-          data.feature,
+          ...current.filter((item) => !(item.account_id === accountId && item.feature_key === featureKey)),
+          feature,
         ])
       }
     } catch {
@@ -116,7 +120,7 @@ export default function FeatureAdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: isAdmin ? 'revoke_admin' : 'grant_admin', user_id: userId }),
       })
-      const data = await response.json() as { ok?: boolean; error?: string }
+      const data = await response.json() as AdminUpdateResponse
       if (!response.ok) {
         setMessage(data.error || 'Could not update SutraAPI admin access.')
         return
@@ -140,9 +144,7 @@ export default function FeatureAdminPage() {
       </div>
 
       {message ? <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{message}</div> : null}
-
       {loading ? <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">Loading SutraAPI controls…</div> : null}
-
       {!loading && !loaded && !message ? <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">No admin controls available.</div> : null}
 
       {loaded ? <>
