@@ -73,5 +73,13 @@ export async function listUpcomingVideoCallsResult(config: TagMangoConfig, start
 
 export async function listUpcomingVideoCalls(config: TagMangoConfig, startDate: Date, endDate: Date) {
   const payload = await listUpcomingVideoCallsResult(config, startDate, endDate)
-  return (payload?.data ?? []).flatMap((day) => day.calls ?? [])
+
+  const body =
+    'result' in payload && payload.result
+      ? payload.result
+      : 'data' in payload
+        ? payload
+        : null
+
+  return (body?.data ?? []).flatMap((day) => day.calls ?? [])
 }
