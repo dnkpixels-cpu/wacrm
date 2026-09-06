@@ -30,7 +30,8 @@ export async function GET() {
 
     try {
       const payload = await listUpcomingVideoCallsResult(config, start, end)
-      const calls = (payload?.data ?? []).flatMap((day) => day.calls ?? [])
+      const body = 'result' in payload ? payload.result : payload
+      const calls = (body?.data ?? []).flatMap((day) => day.calls ?? [])
 
       return NextResponse.json({
         ok: true,
@@ -40,8 +41,8 @@ export async function GET() {
         timezoneOffsetMinutes: config.timezone_offset_minutes ?? 330,
         requestType: 'upcoming',
         window: { start: start.toISOString(), end: end.toISOString() },
-        apiTotal: payload?.total ?? null,
-        dateGroupsReturned: payload?.data?.length ?? 0,
+        apiTotal: body?.total ?? null,
+        dateGroupsReturned: body?.data?.length ?? 0,
         callsReturned: calls.length,
         firstCalls: calls.slice(0, 5).map((call) => ({
           id: call._id,
