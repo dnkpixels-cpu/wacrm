@@ -44,6 +44,8 @@ export async function syncTagMangoAccount(accountId: string) {
         source: 'tagmango',
         tagmango_session_id: call._id,
         tagmango_mango_id: call.mango?._id ?? null,
+        created_at: new Date().toISOString(),
+updated_at: new Date().toISOString(),
       }
       const { data: existing } = await admin.from('sessions').select('id').eq('account_id', accountId).eq('tagmango_session_id', call._id).maybeSingle()
       if (existing?.id) await admin.from('sessions').update(sessionFields).eq('id', existing.id).eq('account_id', accountId)
