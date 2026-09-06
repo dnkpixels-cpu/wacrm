@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { requireFeature } from '@/lib/features'
-import { listUpcomingVideoCalls } from '@/lib/integrations/tagmango'
+import { listUpcomingVideoCallsResult } from '@/lib/integrations/tagmango'
 
 export async function GET() {
   try {
@@ -29,16 +29,19 @@ export async function GET() {
     const end = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000)
 
     try {
-      // api_key_encrypted is used only server-side by the integration helper.
-      // It is never included in the diagnostic response.
-      const calls = await listUpcomingVideoCalls(config, start, end)
+      const payload = await listUpcomingVideoCallsResult(config, start, end)
+      const calls = (payload?.data ?? []).flatMap((day) => day.calls ?? [])
+
       return NextResponse.json({
         ok: true,
         stage: 'tagmango_api',
         accountId,
         whitelabelHost: config.whitelabel_host,
         timezoneOffsetMinutes: config.timezone_offset_minutes ?? 330,
+        requestType: 'upcoming',
         window: { start: start.toISOString(), end: end.toISOString() },
+        apiTotal: payload?.total ?? null,
+        dateGroupsReturned: payload?.data?.length ?? 0,
         callsReturned: calls.length,
         firstCalls: calls.slice(0, 5).map((call) => ({
           id: call._id,
@@ -56,6 +59,7 @@ export async function GET() {
         stage: 'tagmango_api',
         accountId,
         whitelabelHost: config.whitelabel_host,
+        requestType: 'upcoming',
         window: { start: start.toISOString(), end: end.toISOString() },
         error: error instanceof Error ? error.message : String(error),
       }, { status: 502 })
